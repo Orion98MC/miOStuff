@@ -16,7 +16,7 @@ CustomAlertView:
 	#import "CustomAlertView.h"
 
 	[...]
-	CustomAlert *alert = [[[CustomAlertView alloc]initWithTitle:@"Welcome" 
+	CustomAlertView *alert = [[[CustomAlertView alloc]initWithTitle:@"Welcome" 
 															message:@"Now you can make custom alerts :)" 
 															delegate:self 
 											cancelButtonTitle:nil 

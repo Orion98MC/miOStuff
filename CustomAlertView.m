@@ -112,87 +112,58 @@
 	return roundedRectPath;
 }
 
-- (void)layoutSubviews {	
-	NSMutableArray *bottomViews = [NSMutableArray array];
-	CGRect labelsFrame = CGRectNull;
-	CGRect buttonsFrame = CGRectNull;
-	
-	BOOL capturingLabelsFrame = NO;
+- (void)layoutSubviews {
+  if (self.frame.origin.x == 0) { // I know ... hmm
+    return;
+  }
+    
+  CGRect beforeFrame = CGRectNull;
+  NSMutableArray *toBeMovedDown = [NSMutableArray array];
+  
+  for (UIView *v in self.subviews) {
+    if (NSEqualRanges([[[v class]description]rangeOfString:@"Button" options:NSCaseInsensitiveSearch],
+                      (NSRange){NSNotFound, 0})) {
+      if (v != self.contentView) {
+        if ([v isKindOfClass:[UIImageView class]]) {
+          v.alpha = 0.0;
+        } else
+          beforeFrame = CGRectUnion(beforeFrame, v.frame);
+      }
+    } else {
+      if (v != self.contentView) {
+        [toBeMovedDown addObject:v];
+      }
+    }      
+  }
+  
+  if (self.contentView == nil) {
+    return;
+  }
+    
+  if ([self.subviews indexOfObject:self.contentView] == NSNotFound) {
+    // Add contentView
+    [self addSubview:self.contentView];
+    // Position
+    CGRect contentFrame = self.contentView.frame;
+    contentFrame.origin.y = beforeFrame.origin.y + beforeFrame.size.height;
+    contentFrame.origin.x = self.bounds.size.width / 2.0 - contentFrame.size.width / 2.0;
+    self.contentView.frame = contentFrame;
+  }
+    
+  if (toBeMovedDown.count) {
+    CGRect contentFrame = self.contentView.frame;
+    for (UIView *button in toBeMovedDown) {
+      CGRect frame = button.frame;
+      frame.origin.y += contentFrame.size.height;
+      button.frame = frame;
+    }
+    // Resize self
+    CGRect newFrame = self.frame;
+    newFrame.size.height += contentFrame.size.height;
+    newFrame.origin.y -= contentFrame.size.height / 2;
+    self.frame = newFrame;
+  }
 
-	// First we need to identify the alert buttons to move them down later
-	for (UIView *view in self.subviews) {   		
-		if ([view isKindOfClass:[UILabel class]] && (CGRectIsNull(labelsFrame) || capturingLabelsFrame)) {
-			labelsFrame = CGRectUnion(labelsFrame, view.frame);
-			capturingLabelsFrame = YES;
-		} else {
-			capturingLabelsFrame = NO;
-		}
-		
-		if ([[[view class]description]isEqualToString:@"UIThreePartButton"]) {
-			buttonsFrame = CGRectUnion(buttonsFrame, view.frame);
-			[bottomViews addObject:view];
-		}
-	}
-	
-	// Only if the contentView is not empty
-	if (contentView && !CGRectIsEmpty(contentView.frame)) {	
-		CGFloat interSpace = CGRectIsNull(buttonsFrame) ? CGRectGetMinY(labelsFrame) : CGRectGetMinY(buttonsFrame) - CGRectGetMaxY(labelsFrame); // Space between last label and first button
-		
-		// Set content view frame according to the subviews it has
-		CGRect contentBounds = contentView.bounds;
-		contentView.frame = contentBounds;
-		CGRect frame = contentView.frame;
-		frame.origin.x = (abs(CGRectGetWidth(labelsFrame) - frame.size.width))/ 2 + CGRectGetMinX(labelsFrame);
-		frame.origin.y = CGRectGetMaxY(labelsFrame) + interSpace/2;
-		contentView.frame = frame;
-	
-		// add the contentView as subview
-		if (!CGRectIsEmpty(contentView.frame)) {
-			
-			// Need to move the bottomViews down to make room for the contentView
-			for (UIView *bottomView in bottomViews) {
-				CGRect frame = bottomView.frame;
-				frame.origin.y += contentView.frame.size.height;
-				bottomView.frame = frame;
-			}
-			
-			// Re adjust the view frame	and bounds with the new contentView height
-			CGRect frame = self.frame;
-			CGRect bounds = self.bounds;
-			frame.size.height += contentView.frame.size.height;
-			bounds.size.height += contentView.frame.size.height;
-			frame.origin.y -= contentView.frame.size.height / 2;
-			self.frame = frame;
-			self.bounds = bounds;
-			
-			// Add the contentView subview
-			[self addSubview:contentView];
-		}
-		// NSLog(@"Labels %@\nButtons %@\n", NSStringFromCGRect(labelsFrame), NSStringFromCGRect(buttonsFrame));
-	}
-	
-	// TODO: adjust the view size to the total content size
-	
-//	if (adjustSizeToContent) {
-//		CGFloat maxY = 0.0;
-//		CGRect maxRect = CGRectZero;
-//		maxRect = CGRectUnion(maxRect, labelsFrame);
-//		maxRect = CGRectUnion(maxRect, contentView.frame);
-//		maxRect = CGRectUnion(maxRect, buttonsFrame);
-//		
-//		NSLog(@"maxRect: %@", NSStringFromCGRect(maxRect));
-//		NSLog(@"self: %@", NSStringFromCGRect(self.frame));
-//
-//		CGRect frame = self.frame;
-//		frame.size.height = maxRect.size.height + 25;
-//		frame.origin.y -= (frame.size.height - self.frame.size.height)/2;
-//		NSLog(@"new frame: %@", NSStringFromCGRect(frame));
-//		self.frame = frame;
-//		CGRect bounds = self.bounds;
-//		bounds.size.height = frame.size.height;
-//		self.bounds = bounds;
-//	}
-	
 }
 
 @end
